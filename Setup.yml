@@ -1,0 +1,26 @@
+--- # Install git on target host
+- hosts: workstation
+  become: yes
+  tasks:
+  - name: install git
+    yum:
+      name: git
+      state: latest
+
+  - name: install locate
+    yum:
+      name: mlocate
+      state: latest
+
+- hosts: test_server # debian
+  become: yes
+  tasks:
+  - name: install git
+    apt:
+      name: git
+      state: latest
+
+  - name: install locate
+    apt:
+      name: mlocate
+      state: latest
