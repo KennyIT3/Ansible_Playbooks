@@ -1,0 +1,32 @@
+--- # Install git on target host
+- hosts: workstation
+  become: yes
+  vars:
+     target_test: git
+  tasks:
+  - name: install git
+    yum:
+      name: "{{ target_test }}"
+      state: latest
+ 
+  - name: install locate 
+    yum:
+      name: mlocate
+      state: latest
+
+- hosts: test_server # debian
+  become: yes
+  vars:
+     target_test: git
+  tasks:
+  - name: install git
+    apt:
+      name: "{{ target_test }}"
+      state: latest
+
+  - name: install locate
+    apt:
+      name: mlocate
+      state: latest
+
+
