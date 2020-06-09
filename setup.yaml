@@ -5,37 +5,37 @@
      target_test: git
   tasks:
   - name: install git
-    yum:
+    yum:s
       name: "{{ target_test }}"
       state: latest
- 
-  - name: install locate 
+
+  - name: install locate
     yum:
       name: mlocate
       state: latest
-    
+
   - name: Update locate database
-    command: /bin/updatedb    
-  
+    command: /bin/updatedb
+
   - name: install nslookup
     yum:
       name: bind-utils
       state: latest
-  
-  - name: install apache  
+
+  - name: install apache
     yum:
-      name: httpd 
+      name: httpd
       state: latest
- 
+
     notify: restart apache
-  
+
   handlers:
       - name: restart apache
-        service: 
+        service:
           name: httpd
-          state: restarted 
+          state: restarted
         listen: "Restart Apache services"
- 
+
 - hosts: test_server # debian
   become: yes
   vars:
@@ -50,5 +50,3 @@
     apt:
       name: mlocate
       state: latest
-
-
