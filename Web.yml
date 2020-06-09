@@ -1,3 +1,4 @@
+---
 name: Deploy a Web App
 hosts: DevWeb, ProdWeb
 vars:
