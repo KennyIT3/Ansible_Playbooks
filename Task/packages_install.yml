@@ -1,0 +1,24 @@
+- name: install git
+  yum:
+    name: "{{ target_test }}"
+    state: latest
+
+- name: install locate
+  yum:
+    name: mlocate
+    state: latest
+
+- name: Update locate database
+  command: /bin/updatedb
+
+- name: install nslookup
+  yum:
+    name: bind-utils
+    state: latest
+
+- name: install apache
+  yum:
+    name: httpd
+    state: latest
+
+  notify: restart apache
