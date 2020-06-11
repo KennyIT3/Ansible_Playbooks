@@ -4,7 +4,7 @@
   vars:
      target_test: git
   tasks:
-    - include:
+    - include_tasks: Task/packages_install.yml
 
   handlers:
       - name: restart apache
