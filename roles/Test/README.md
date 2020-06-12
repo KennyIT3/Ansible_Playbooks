@@ -24,7 +24,8 @@ Including an example of how to use your role (for instance, with variables passe
   handlers:
     - include_tasks: Handlers/apache.yml
 
-# To update the Debian host
+#To upddate the Debian Host
+
 - hosts: test_server # debian
   become: yes
   vars:
