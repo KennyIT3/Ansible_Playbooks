@@ -6,14 +6,14 @@
      http_port: 80
      max_clients: 200
     
--  name: Creating a demo user #Task
-   os_user:   #Module
-      name: demouser
-      password: secret-password
-      update_password: on_create
-      email: demo@example.com
-      domain: "{{ demo_domain.id }}"
-      state: present
+- name: Creating a demo user #Task
+  os_user:   #Module
+    name: demouser
+    password: secret-password
+    update_password: on_create
+    email: demo@example.com
+    domain: "{{ demo_domain.id }}"
+    state: present
 
 - name: Adding role to group
   os_user_role: #Module
