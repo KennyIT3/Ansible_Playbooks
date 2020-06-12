@@ -1,5 +1,4 @@
 ---
 - hosts: localhost, workstation, test_server
   remote_user: root
-  roles:
-    - roles/Test
+  
