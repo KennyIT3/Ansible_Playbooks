@@ -2,8 +2,10 @@
   apt:
     name: "{{ target_test }}"
     state: latest
+  tags: installation  
 
 - name: install locate
   apt:
     name: mlocate
     state: latest
+  tags: installation

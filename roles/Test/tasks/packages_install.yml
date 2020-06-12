@@ -2,7 +2,8 @@
   yum:
     name: "{{ target_test }}"
     state: latest
-
+  tags: installation 
+  
 - name: install locate
   yum:
     name: mlocate
@@ -15,6 +16,7 @@
   yum:
     name: bind-utils
     state: latest
+  tags: installation 
 
 - name: install apache
   yum:
