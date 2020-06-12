@@ -5,7 +5,7 @@ This is a Test role to install packages on Redhat and Debian hosts
 
 Requirements
 ------------
-Hosts
+Hosts:
 
 Redhat, Debian 
 
