@@ -1,2 +1,4 @@
 localhost
+workstation  # Redhat
+test_server  #debian
 
