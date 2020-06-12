@@ -28,7 +28,7 @@ Including an example of how to use your role (for instance, with variables passe
 
 #To update the Debian Host
 
-- hosts: test_server # debian
+- hosts: test_server 
   become: yes
   vars:
      target_test: git
