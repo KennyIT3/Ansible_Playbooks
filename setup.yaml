@@ -15,4 +15,4 @@
   vars:
      target_test: git
   roles:
-    - /Test
+    - Test
