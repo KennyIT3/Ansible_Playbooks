@@ -6,8 +6,6 @@
   roles:
     - Test
 
-  handlers:
-    - include_tasks: Handlers/apache.yml
 
 # To update the Debian host
 - hosts: test_server # debian
