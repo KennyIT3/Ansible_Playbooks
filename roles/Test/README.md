@@ -5,8 +5,8 @@ This is a Test role to install packages on Redhat and Debian hosts
 
 Requirements
 ------------
-
-Redhat, Debian Host
+Hosts
+Redhat, Debian 
 
 
 Example Playbook
