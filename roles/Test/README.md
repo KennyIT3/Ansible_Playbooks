@@ -17,9 +17,12 @@ Including an example of how to use your role (for instance, with variables passe
 
 #To update the Redhat Host
 - hosts: workstation 
+  
   become: yes
+  
   vars:
      target_test: git
+  
   roles:
     - Test
 
@@ -29,9 +32,12 @@ Including an example of how to use your role (for instance, with variables passe
 #To update the Debian Host
 
 - hosts: test_server 
+  
   become: yes
+  
   vars:
      target_test: git
+  
   roles:
     - Test
 
