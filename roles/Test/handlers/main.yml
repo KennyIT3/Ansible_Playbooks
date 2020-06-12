@@ -1,2 +1,3 @@
 ---
 # handlers file for roles/Test
+- include: apache.yml

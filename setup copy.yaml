@@ -3,8 +3,8 @@
   become: yes
   vars:
      target_test: git
-  roles:
-    - Test
+  tasks:
+    - include_tasks: Task/packages_install.yml
 
   handlers:
     - include_tasks: Handlers/apache.yml
@@ -14,5 +14,5 @@
   become: yes
   vars:
      target_test: git
-  roles:
-    - /Test
+  tasks:
+    - include_tasks: Task/debian_install.yml
