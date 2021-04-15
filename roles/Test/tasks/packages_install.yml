@@ -3,20 +3,17 @@
     name: "{{ target_test }}"
     state: latest
   tags: installation 
-  
-- name: install locate
-  yum:
-    name: mlocate
-    state: latest
 
+- name: Server Packages
+  yum: {{ item }} state=latest
+  with_items:
+    - mlocate
+    - bind-utils
+    - tree
+
+  
 - name: Update locate database
   command: /bin/updatedb
-
-- name: install nslookup
-  yum:
-    name: bind-utils
-    state: latest
-  tags: installation 
 
 - name: install apache
   yum:
@@ -28,5 +25,13 @@
   service:
     name: httpd
     state: started
+
+# - name: install nslookup
+#   yum:
+#     name: bind-utils
+#     state: latest
+#   tags: installation 
+
+
 
 
