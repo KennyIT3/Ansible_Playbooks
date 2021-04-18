@@ -1,0 +1,16 @@
+--- # Install git on target host
+- hosts: Centos1 # Redhat
+  become: yes
+  vars:
+     target_test: git
+  roles:
+    - Test
+
+
+# To update the Debian host
+- hosts: Ubuntu # debian
+  become: yes
+  vars:
+     target_test: git
+  roles:
+    - Test
