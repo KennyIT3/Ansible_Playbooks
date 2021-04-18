@@ -4,8 +4,26 @@
     state: latest
   tags: installation  
 
-- name: install locate
+- name: Server Packages
+  apt: name={{ item }} state=latest
+  with_items:
+    - mlocate
+    #- bind-utils
+    - tree
+    - bash-completion
+
+  
+- name: Update locate database
+  command: /usr/bin/updatedb
+
+- name: install apache
   apt:
-    name: mlocate
+    name: apache2
     state: latest
-  tags: installation
+  notify: restart apache
+
+- name: Ensure apache server is up and running
+  service:
+    name: apache2
+    state: started
+

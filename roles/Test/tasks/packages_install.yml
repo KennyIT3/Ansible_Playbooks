@@ -5,11 +5,12 @@
   tags: installation 
 
 - name: Server Packages
-  yum: {{ item }} state=latest
+  yum: name={{ item }} state=latest
   with_items:
     - mlocate
     - bind-utils
     - tree
+    - bash-completion
 
   
 - name: Update locate database
