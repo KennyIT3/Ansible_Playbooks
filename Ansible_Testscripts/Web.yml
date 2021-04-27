@@ -1,10 +1,12 @@
 ---
 name: Deploy a Web App
-hosts: DevWeb, ProdWeb
+hosts: Centos1, Ubuntu
+
 vars:
   db_name: employee_db
   db_user: db_user
   db_user_password: Passw0rd
+
 tasks:
   - name: Install dependencies
     yum: name={{ item }} state=installed force=yes
@@ -38,7 +40,7 @@ tasks:
       state: present
       host: '%'
 
-  - name: Python Flask
+  - name: Install Python Flask
     pip:
       name: {{ item }}
       state: present
@@ -46,8 +48,8 @@ tasks:
         - flask
         - flask-mysql
 
- - name: Copy Source Code
-   copy: src=app.py dest=/opt/app.py
+  - name: Copy Source Code
+    copy: src=app.py dest=/opt/app.py
 
- - name: Start Web Server
-   shell: FLASK_APP=/opt/app.py nohup flask run host=0.0.0.0 &
+  - name: Start Web Server
+    shell: FLASK_APP=/opt/app.py nohup flask run host=0.0.0.0 &
