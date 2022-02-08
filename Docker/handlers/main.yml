@@ -1,0 +1,6 @@
+---
+- name: Restart rsyslog on config change
+  service:
+    name: rsyslog
+    state: restarted
+  listen: restart rsyslog

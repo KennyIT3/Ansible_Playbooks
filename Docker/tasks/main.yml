@@ -1,0 +1,165 @@
+---
+- name: Ensure yum-config-manager is available
+  yum:
+    name: yum-utils
+    state: latest
+
+- name: Add Official Docker repository
+  shell: yum-config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo
+  args:
+    creates: /etc/yum.repos.d/docker-ce.repo
+
+  # yum_repository:
+  #   name: docker
+  #   description: Docker CE Repo
+  #   baseurl: https://download.docker.com/linux/centos/docker-ce.repo
+
+- name: Ensure Docker-specific packages are installed
+  yum:
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - docker-ce
+    - docker-ce-cli
+    - containerd.io
+    - python3
+
+- name: Create /etc/docker if it doesn't exist
+  file:
+    path: /etc/docker
+    state: directory
+    owner: root
+    group: config
+    mode: '0775'
+
+- name: Add syslog configuration for Docker
+  copy:
+    src: "{{role_path}}/files/docker.syslog"
+    dest: /etc/rsyslog.d/docker.conf
+    owner: root
+    group: config
+    mode: '0664'
+  notify: restart rsyslog
+
+# GOTCHA: logrotate configurations must be 0644 or 0444 only
+- name: Add logrotate configuration for Docker
+  copy:
+    src: "{{role_path}}/files/docker.logrotate"
+    dest: /etc/logrotate.d/docker
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Add host entry for registry
+  lineinfile:
+    path: /etc/hosts
+    line: "{{docker_registry_ip}}  {{docker_registry_host}}"
+    regexp: '^.*dockerregistry.*'
+    state: present
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Make Docker store mount locations
+  file:
+    path: "{{item}}"
+    state: directory
+    owner: root
+    group: config
+    mode: '0775'
+  with_items:
+  - "{{docker_dir}}/store"
+  - "{{docker_phy_store}}"
+
+- name: Bind mount Docker store
+  mount:
+    src: "{{docker_phy_store}}"
+    path: "{{docker_dir}}/store"
+    fstype: none
+    opts: "defaults,bind"
+    state: mounted
+
+- name: Add Docker-specific configurations for Haven
+  copy:
+    src: "{{role_path}}/files/daemon.json"
+    dest: /etc/docker/daemon.json
+    owner: root
+    group: config
+    mode: '0664'
+
+- name: Make common Docker config directories
+  file:
+    path: "{{docker_dir}}/common/certs"
+    state: directory
+    owner: root
+    group: config
+    mode: '0775'
+
+- name: Add global Elasticsearch CA Certificate
+  copy:
+    src: "{{playbook_dir}}/files/certs/ccd-elasticsearch-ca-prod.pem"
+    dest: "{{docker_dir}}/common/certs/ccd-elasticsearch-ca-prod.pem"
+    owner: root
+    group: config
+    mode: '0664'
+
+- name: Ensure Docker-specific packages are installed
+  yum:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+    - python2-pip
+    - python3-pip
+    - python3-wheel
+
+#- name: Update Target System pip version
+#  pip:
+#    name: pip
+#    state: latest
+#    extra_args: '--trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org'
+
+- name: Install Python requirements for module installation
+  pip:
+    name: ['pathlib']
+    extra_args: '--ignore-installed --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org'
+    #executable: /usr/local/bin/pip3
+
+- name: Install Python docker and required modules
+  pip:
+    name: ['websocket-client==0.57.0','docker==4.4', 'jsondiff==1.2.0', 'pyyaml==5.4.1']
+    extra_args: '--ignore-installed --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org'
+    #executable: /usr/local/bin/pip3
+
+- name: Make sure Docker is running
+  systemd:
+    state: started
+    enabled: yes
+    name: docker
+
+# docker may have an old or broken swarm configuration on target, but we must be manager
+- name: Check local Docker swarm for manager status
+  docker_swarm_info:
+    nodes: yes
+  ignore_errors: yes
+  failed_when: 1 == 0
+  register: swarm_info
+
+- name: Remove old swarm configuration
+  when: (swarm_info.docker_swarm_manager == false) or ('legacy_docker' not in group_names)
+  shell: 'docker swarm leave --force'
+  ignore_errors: yes
+  # docker_swarm doesn't work for this particular instance
+  #docker_swarm:
+  #  state: absent
+
+- name: Init a new swarm with default parameters if necessary
+  docker_swarm:
+    state: present
+
+- name: Log into internal docker registry
+  docker_login:
+    registry: "{{docker_registry_host}}:5000"
+    username: registry
+    password: "{{docker_registry_password}}"
+    reauthorize: yes

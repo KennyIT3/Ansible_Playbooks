@@ -1,0 +1,15 @@
+---
+- name: Remove {{stack_name}} Docker stack for restart
+  docker_stack:
+    state: absent
+    name: "{{stack_name}}"
+  listen: "restart haproxy stack"
+
+- name: Wait for {{stack_name}} Docker network to clear before restart
+  shell: 'docker network inspect $(docker network ls -q) | grep "{{stack_name}}_default"'
+  register: cmd_res
+  failed_when: cmd_res.rc != 1 and cmd_res.rc != 0
+  retries: 10
+  delay: 5
+  until: cmd_res.rc == 1
+  listen: "restart haproxy stack"

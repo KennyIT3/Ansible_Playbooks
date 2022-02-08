@@ -1,0 +1,61 @@
+---
+- name: Set host root as fact
+  set_fact:
+    host_only: "{{inventory_hostname | regex_replace('^([^\.]+).*$', '\\1') }}"
+
+- name: Create {{stack_title}} Docker stack directories
+  file:
+    path: "{{item}}"
+    state: directory
+    owner: root
+    group: config
+    mode: '0775'
+  with_items:
+    - "{{docker_dir}}/{{stack_name}}"
+    - "{{docker_dir}}/store/{{stack_name}}"
+    - "{{docker_dir}}/store/{{stack_name}}/data"
+
+- name: Create {{stack_title}} output directory
+  file:
+    path: "{{logdata_log_path}}/{{stack_name}}"
+    state: directory
+    owner: '11111'
+    group: '11111'
+    mode: '0775'
+
+- name: Generate {{stack_title}} Docker stack file
+  template:
+    src: "{{role_path}}/templates/stack.yml.j2"
+    dest: "{{docker_dir}}/{{stack_name}}/stack.yml"
+    owner: root
+    group: config
+    mode: '0664'
+  notify: "restart {{stack_name}} stack"
+
+# copy CA cert
+
+- name: Copy domain certificates information into local secret
+  docker_secret:
+    name: {{item}}
+    # If the file is JSON or binary, Ansible might modify it (because
+    # it is first decoded and later re-encoded). Base64-encoding the
+    # file directly after reading it prevents this to happen.
+    data: "{{ lookup('file', '{{item}}') | b64encode }}"
+    data_is_b64: false
+    state: present
+  with_items:
+    - "{{role_path}}/files/meta.corvidcd.net-full.pem"
+
+# copy default haproxy file
+
+
+# make sure the restart handler runs if necessary
+- meta: flush_handlers
+
+- name: Deploy {{stack_title}} from compose file
+  docker_stack:
+    state: present
+    with_registry_auth: yes
+    name: "{{stack_name}}"
+    compose:
+      - "{{docker_dir}}/{{stack_name}}/stack.yml"
