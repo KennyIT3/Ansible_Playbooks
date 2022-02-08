@@ -1,9 +1,0 @@
-- name: install git
-  apt:
-    name: "{{ target_test }}"
-    state: latest
-
-- name: install locate
-  apt:
-    name: mlocate
-    state: latest
