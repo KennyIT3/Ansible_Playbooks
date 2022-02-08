@@ -1,0 +1,21 @@
+# ---
+- name: Creates a snapshot for target VM
+  ovirt_snapshot:
+   auth: "{{ ovirt_auth }}"
+   vm_name: "{{ item }}" 
+   description: Before Upgrade
+   use_memory: false
+   wait: true
+  register: snapshot
+  ignore_errors: yes
+
+ #TODO:Feature task for production: Change email to email body append
+ # 
+- name: Send email if job failed
+  when: 'snapshot is failed'
+  mail:
+   host: localhost
+   port: 25
+   to: Test <test@gmail.com>
+   subject: Ansible-report
+   body: "Following VM snapshot was completed in Ovirt: {{ Centos_VMS }}"

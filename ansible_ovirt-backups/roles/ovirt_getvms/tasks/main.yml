@@ -1,0 +1,12 @@
+---
+# This role cannot run without a previously initiated authentication
+- name: Retrieve VM Info
+  ovirt_vm_facts:
+    auth: "{{ ovirt_auth }}"
+  # variable auto-registers global "ovirt_vms" variable
+
+- name: Get list of VMs in oVirt
+  # Renders list from ovirt data dump of only VM names
+  set_fact:
+     ovirtvm_list: "{{ ovirt_vms |  map(attribute='name') | flatten }}"
+

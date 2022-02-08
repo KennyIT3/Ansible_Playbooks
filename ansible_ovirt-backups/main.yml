@@ -1,0 +1,44 @@
+### This playbooks combines playbooks ansible_CSV, Ovirt_Snapshot, and ovirt_ansible
+### This pulls list of VMs takes snapshot of the VMs and CLones them
+
+---
+- name: Main Playbook
+  hosts: localhost
+  connection: local
+  gather_facts: yes
+
+  vars:
+    ansible_python_interpreter: "/usr/bin/python3"
+    #TODO: Create a way to do backups for each day
+    targetDOMW: 7
+    # blank list (array) for set_fact iteration
+    selectVm: []
+    sql_datadir: /ansible_ovirt
+    ovirt_api_url: https://ovirt.net/ovirt-engine/api
+    ovirt_username: test
+    
+   # TODO: See how to make the encryption work
+    ovirt_password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          65613564633963313931333
+    mail_body: " "
+
+    snapshot_targets: []
+
+    # testing overrides
+    # TODO: remove for production!
+    goodList_override:
+      - ansible01
+      - Test1
+      - Test3
+      - Test4
+      - VM_TestLocalRepo
+      - VM_TestLocalRepo2
+
+  roles: # Roles below are set in the order for each role to be run
+    - ovirt_authenticate # authenticate with oVirt for API access
+    - ovirt_getvms # get list of VMs from oVirt
+    - ovirt_getbackuptargets # get list of valid targets for backup from curated lists
+    - ovirt_backupvms # RUns the ovirt_createvmbackup role and displays the results 
+    - ovirt_createvmbackup # Create Snapshots and clone of VMs. Backup each target VM sequentially
+    

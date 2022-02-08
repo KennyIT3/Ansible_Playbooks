@@ -1,0 +1,7 @@
+---
+ovirt_backup_admin_mail: "Kenny Sneed <test@gmail.com>"
+mail_body: ""
+# create empty lists for iterators
+naughtyList: []
+goodList: []
+missingList: []

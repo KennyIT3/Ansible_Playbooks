@@ -1,0 +1,45 @@
+---
+# tasks 
+- name: Installing Ubuntu Updates, listing the updates
+  block: 
+  - name: install ubuntu updates
+    apt:
+      upgrade: dist
+      update_cache: yes
+      # autoremove: yes
+      # autoclean: yes
+    check_mode: yes
+    become: yes
+    register: ubuntupack
+
+  - name: List installed and updated packages Ubuntu
+    shell: grep -E "^$(date +%Y-%m-%d).+ (install|upgrade) " /var/log/dpkg.log |cut -d " " -f 3-5
+    register: ubuntu
+
+  - name: Updates UBUNTU packages
+    debug: msg="{{ ubuntupack.stdout_lines }}"
+  when: ansible_os_family == "Debian"
+
+- name: Installing Centos Updates, listing the updates
+  block: 
+  - name: install centos updates
+    yum:
+      name: '*'
+      update_cache: yes
+      state: latest
+      exclude: kernel*,zabbix*,git*,elastic*,docker*
+    check_mode: yes
+    become: yes
+    when: ansible_os_family == "RedHat"
+    register: centospack
+
+  - name: List updated packages
+    shell: rpm -qa --last | grep "$(date +%a\ %d\ %b\ %Y)" |cut -f 1 -d " "
+    register: centos
+    args:
+      warn: no
+
+  - name: Updates Centos packages
+    debug: msg="{{ centospack }}"
+
+  when: ansible_os_family == "RedHat"

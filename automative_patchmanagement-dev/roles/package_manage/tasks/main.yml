@@ -1,0 +1,180 @@
+---
+# tasks file for package_manage
+- name:  Verify web processes are not running
+  shell: if ps -eaf | egrep 'apache|httpd|nginx'|grep -v grep > /dev/null ;then echo 'process_running';else echo 'process_not_running';fi
+  ignore_errors: true
+  register: web_process_check
+
+- name:  Verify database processes are not running
+  shell: if ps -eaf | egrep 'mysql|cassandra|mariadb'|grep -v grep > /dev/null ;then echo 'process_running';else echo 'process_not_running';fi
+  ignore_errors: true
+  register: DB_process_check
+
+- name:  Verify Beyond processes are not running
+  shell: if ps -eaf | egrep 'zabbix|elastic'|grep -v grep > /dev/null ;then echo 'process_running';else echo 'process_not_running';fi
+  ignore_errors: true
+  register: Beyond_process_check
+
+- name:  Check makes sure Web application is down before patching
+  fail: msg="{{ "WEB" }} have running Application. Please stop the application processes first, then attempt patching."
+  when: web_process_check.stdout == "process_running"
+
+- name:  Check makes sure DB application is down before patching
+  fail: msg="{{ "DB" }} have running Application. Please stop the application processes first, then attempt patching."
+  when: DB_process_check.stdout == "process_running"
+
+- name:  Check makes sure Beyond application is down before patching
+  fail: msg="{{ "ZABBIX" }} have running Application. Please stop the application processes first, then attempt patching."
+  when: Beyond_process_check.stdout == "process_running"
+
+
+- name: Upgrading Centos Web/DB/Beyond packages and restarting the servers 
+  block:
+    - name: Upgrade nginx package on RHEL/CentOS server
+      yum:
+        name="nginx"
+        state=latest
+      when: Web_process_check.stdout == "process_not_running" #and ansible_os_family == "Redhat"
+      tags:
+        - web
+
+    - name: Upgrade Apache package on RHEL/CentOS server
+      yum:
+        name="apache2"
+        state=latest
+      when: Web_process_check.stdout == "process_not_running" #and ansible_os_family == "Redhat"
+      tags:
+        - web
+
+    - name: Upgrade cassandra package on RHEL/CentOS server
+      yum:
+        name="cassandra"
+        state=latest
+      when: DB_process_check.stdout == "process_not_running" #and ansible_os_family == "Redhat"
+      tags:
+        - cass
+
+    - name: Upgrade mysql package on RHEL/CentOS server
+      yum:
+        name="mysql-*"
+        state=latest
+      when: DB_process_check.stdout == "process_not_running" #and ansible_os_family == "Redhat"
+      tags:
+        - mysql
+
+    - name:  Upgrade zabbix package on RHEL/CentOS server
+      yum:
+        name="zabbix-*"
+        state=latest
+      when: Beyond_process_check.stdout == "process_not_running" #and ansible_os_family == "Redhat"
+      tags:
+        - beyond
+
+    - name:  Upgrade elastic package on RHEL/CentOS server
+      yum:
+        name="elasticsearch"
+        state=latest
+      when: app_process_check.stdout == "process_not_running" #and ansible_os_family == "Redhat"
+      tags:
+        - beyond
+
+    - name: Reboot CentOS/RedHat systems
+      command: shutdown -r +1  "Rebooting CentOS/RedHat Servers After Application updated Patching"
+      async: 0
+      poll: 0
+      when: reboot_required.stdout == "reboot_needed" and "process_not_running" #and ansible_os_family == "Redhat"
+      register: reboot_started
+      ignore_errors: true
+    
+    - name: Task 9 - pause for 180 secs
+      pause:
+        minutes: 3
+    
+    - name: Check if all the systems responding to ssh
+      local_action:
+        module: wait_for
+          host={{ (ansible_ssh_host|default(ansible_host))|default(inventory_hostname) }}
+          port=22
+          search_regex=OpenSSH
+          delay=15
+          timeout=300
+          state=started
+          
+  when: ansible_os_family == "RedHat"
+
+- name: Upgrading Ubuntu Web/DB/Beyond packages and restarting the servers 
+  block: 
+  - name: Upgrade mysql package on Ubuntu/Debian Servers
+    apt:
+      name="mysql-*"
+      state=latest
+    when: DB_process_check.stdout == "process_not_running" #and ansible_os_family == "Debian"
+    tags:
+      - mysql
+    
+  - name: Upgrade cassandra package on Ubuntu/Debian Servers
+    apt:
+      name="cassandra"
+      state=latest
+    when: DB_process_check.stdout == "process_not_running" #and ansible_os_family == "Debian"
+    tags:
+      - cass
+
+  - name: Upgrade nginx package on Ubuntu/Debian Servers
+    apt:
+      name="nginx"
+      state=latest
+    when: Web_process_check.stdout == "process_not_running" #and ansible_os_family == "Debian"
+    tags:
+      - web
+
+  - name: Upgrade Apache package on Ubuntu/Debian Servers
+    apt:
+      name="apache2"
+      state=latest
+    when: Web_process_check.stdout == "process_not_running" #and ansible_os_family == "Debian"
+    tags:
+      - web
+
+  - name:  Upgrade zabbix package on Ubuntu/Debian Servers
+    apt:
+      name="zabbix-*"
+      state=latest
+    when: Beyond_process_check.stdout == "process_not_running" #and ansible_os_family == "Debian"
+    tags:
+      - beyond
+
+  - name:  Upgrade elastic package on Ubuntu/Debian Servers
+    apt:
+      name="elasticsearch"
+      state=latest
+    when: app_process_check.stdout == "process_not_running" #and ansible_os_family == "Debian"
+    tags:
+      - beyond
+
+  - name: Task 8 - Reboot Ubuntu/Debian Servers
+    reboot:
+      msg: "Rebooting Ubuntu/Debian Servers After Patching"
+      connect_timeout: 5
+      reboot_timeout: 300
+      pre_reboot_delay: 0
+      post_reboot_delay: 30
+      test_command: uptime
+    when: reboot_required_file.stat.exists and "process_not_running" #and ansible_os_family == "Debian"
+    ignore_errors: true
+
+  - name: Task 9 - pause for 180 secs
+    pause:
+      minutes: 3
+
+  - name: Task 10 - check if all the systems responding to ssh
+    local_action:
+      module: wait_for
+        host={{ (ansible_ssh_host|default(ansible_host))|default(inventory_hostname) }}
+        port=22
+        search_regex=OpenSSH
+        delay=15
+        timeout=300
+        state=started
+  
+  when: ansible_os_family == "Debian"

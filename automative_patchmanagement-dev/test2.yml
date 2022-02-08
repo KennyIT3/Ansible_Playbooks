@@ -1,0 +1,31 @@
+---
+- name: Print the package facts
+  hosts: #localhost
+     - Test1
+     #- Test3
+     - Test4
+  vars:
+   good:
+     - Test1
+     - Test3
+     - Test4
+  tasks:   
+  - name: Print the package facts
+    package_facts:
+        manager: "auto"
+
+  - name: Debug
+    debug:
+      msg: "{{ item.key }} {{ item.value|json_query('[].version') }}"
+    loop: "{{ ansible_facts.packages|dict2items }}"
+    loop_control:
+      label: "{{ item.key }}"
+    register: test
+
+    
+  - name: Write report to outfiles
+    delegate_to: localhost
+    copy:
+      content: "{{ test | to_nice_json }}"
+      dest: "/ansible/packages/{{inventory_hostname}}-{{ansible_date_time.date}}.json"
+

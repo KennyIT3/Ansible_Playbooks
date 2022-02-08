@@ -1,0 +1,167 @@
+---
+# tasks file for global_repo
+
+- name: Install, configure, and start Apache
+  block:
+  #Install yum-utils on RHEL Servers
+  - name: Install yum-utils
+    yum:
+      name: 'yum-utils'
+      state: present
+    when: ansible_os_family == "RedHat"
+
+  # Make task to check if yum.repos.d is empty
+  - name: Get file listing
+    find:
+      paths: /etc/yum.repos.d
+      patterns: '*'
+      hidden: yes
+      file_type: file
+    register: directory_content_result 
+
+  - name: List files
+    debug: msg="{{ directory_content_result.files }}"
+
+  - name: Get remove file listing
+    file:
+      path: "{{ item.path }}"
+      state: absent
+    with_items: "{{ directory_content_result.files }}"
+    when: not directory_content_result  #ansible_os_family == "RedHat"  
+    # when: directory_content_result.files.matched|int != 0
+
+  - name: Add CentOS_7 repository file
+    command: yum-config-manager --add-repo=http://test.com/mirror/centos7.repo
+    args:
+      creates: /etc/yum.repos.d/centos7.repo
+    register: file_update
+
+
+  - name: Add Zabbix repository file
+    command: yum-config-manager --add-repo=http://test.com/zabbix/zabbix.repo
+    args:
+      creates: /etc/yum.repos.d/zabbix.repo
+    
+  - name: Add Official Docker repository
+    command: yum-config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo
+    args:
+      creates: /etc/yum.repos.d/docker-ce.repo
+
+  - name: Add Cassandra repository
+    command: yum-config-manager --add-repo=http://test.com/cassandra/cassandra.repo
+    args:
+      creates: /etc/yum.repos.d/cassandra.repo 
+
+  - name: Add Tacacs repository
+    command: yum-config-manager --add-repo=http://test.com/tacacs/tacacs-plus.repo
+    args:
+      creates: /etc/yum.repos.d/tacacs-plus.repo
+   
+  - name: Add Gitlab repository
+    command: yum-config-manager --add-repo=http://test.com/gitlab/gitlab_gitlab-ee.repo
+    args:
+      creates: /etc/yum.repos.d/gitlab_gitlab-ee.repo
+
+  - name: Add Mysql repository
+    command: yum-config-manager --add-repo=http://test.com/mysql/mysql-community.repo
+    args:
+      creates: /etc/yum.repos.d/mysql-community.repo
+
+  - name: Add TheHive repository
+    command: yum-config-manager --add-repo=http://test.com/thehive/thehive-project.repo 
+    args:
+      creates: /etc/yum.repos.d/thehive-project.repo
+
+  - name: Add Elastic-Source repository
+    command: yum-config-manager --add-repo=http://test.com/elastic/Elastic-Source.repo
+    args:
+      creates: /etc/yum.repos.d/Elastic-Source.repo
+    # when: ansible_os_family == "RedHat" 
+    # - file_update.stdout == "skipped"
+  
+  - name: List files in the yum.repos.d Directory
+    debug:
+      # msg: "{{ directory_content_result.files.0.path }}"
+      msg: "{{ directory_content_result.files }}"
+   
+
+  - name: Sees the Centos output of what changed
+    debug:
+      msg: "{{ file_update }}"
+
+  when: ansible_os_family == "RedHat"
+
+
+- name: Check Source Directory, Add Source list 
+  block:
+  - name: Check see if sources.d directory is empty
+    find:
+      paths: /etc/apt/sources.list.d/
+      patterns: '*'
+      hidden: yes
+      file_type: file
+    register: Source_dir_result 
+   
+  - name: Checks to see if there are files in the Sources.d Directory
+    debug:
+      msg: "{{ Source_dir_result.files }}"
+    
+
+  - name: Get remove file listing
+    file:
+      path: "{{ item.path }}"
+      state: absent
+    with_items: "{{ Source_dir_result.files  }}"
+    when: not Source_dir_result 
+
+    
+   Cassandra repo is not working 
+  - name: Adding Cassandra 
+    apt_repository:
+      repo: "deb http://www.apache.org/dist/cassandra/debian 40x main"
+      state: present 
+      update_cache: true 
+      filename: Cassandra
+
+  - name: Adding ElasticSource
+    apt_repository: 
+      repo: deb https://artifacts.elastic.co/packages/7.x/apt stable main
+      state: present 
+      update_cache: true 
+      filename: ElasticSource
+
+  - name: add thehive apt-key
+    apt_key: 
+      url: https://raw.githubusercontent.com/TheHive-Project/TheHive/master/PGP-PUBLIC-KEY
+      state: present 
+
+ 
+  - name: Adding TheHive4
+    apt_repository: 
+      repo: deb https://deb.thehive-project.org release main stable main
+      state: present
+      update_cache: true 
+      filename: Thehive4 
+
+  - name: Add Ubuntu Source file
+    copy:
+      # Src is from where you are running
+      src: "{{ role_path }}/files/sources.list"         
+      dest: /etc/apt/sources.list
+    register: apt_sources_updated
+    
+
+  - name: Updating apt cache
+    apt:
+      update_cache: true
+    become: true
+    when: apt_sources_updated['changed']
+
+  - name: Sees the output of what changed Ubuntu
+    debug:
+      msg: "{{ apt_sources_updated }}"
+
+  when: ansible_os_family == "Debian"
+  ignore_errors: yes    # Continues to run task even when an repo fails 
+
+

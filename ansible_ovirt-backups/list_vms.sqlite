@@ -1,0 +1,8 @@
+SQLite format 3_tablevmsvms CREATE TABLE vms(
+"vm" TEXT,
+"environment" TEXT,
+"Tags" TEXT,
+"frequency" TEXT,
+"day" INT,
+"shelf" TEXT
+)

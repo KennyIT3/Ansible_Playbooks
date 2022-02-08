@@ -1,0 +1,75 @@
+---
+- name: Get all VMs from SQLite
+  set_fact:
+    vm_targets: "{{ lookup('theredgreek.sqlite.sqlite',path=path, select=select ) }}"
+    vm_targetslist: "{{ lookup('theredgreek.sqlite.sqlite',path=path, select=select) |  map(attribute='vm') | flatten }}"
+
+  vars:
+    path: "{{sql_datadir}}/list_vms.sqlite" # list_vms.sqlite is the SQL data file
+    #TODO: Remove for productions
+    select: 'select * FROM vms'  #vms is the SQL table that is created manually (see README)
+
+    # TODO: uncomment for production  
+    # select: 'select * FROM vms where (frequency = "monthly" and day="%d",date("now")) OR (frequency = "daily")' #Pulls the exact day
+
+    #TODO: Remove override below
+    # select: 'select * FROM vms where (frequency = "monthly" and day=7) OR (frequency = "daily")'
+
+- name: Assemble list of targets for VMs that exist in oVirt
+  set_fact:
+    goodList: "{{ goodList + [item.vm] }}"
+  loop: "{{ vm_targets }}"
+  when: item.vm in ovirtvm_list
+
+- name: Assemble list of targets that no longer exist in oVirt
+  set_fact:
+    naughtyList: "{{ naughtyList + [item.vm] }}"
+  loop: "{{ vm_targets }}"
+  when: item.vm not in ovirtvm_list
+
+
+- name: Emails list of VMs that are no longer in the infrastructure
+  mail:
+    host: localhost
+    port: 25
+    to: "{{ ovirt_backup_admin_mail }}"
+    subject: "Ansible: oVirt curation changes needed"
+    body: |
+      Following VM(s) no longer exist in oVirt and should be removed from curation: {{ naughtyList | join('\n')}}
+
+
+
+
+
+
+
+
+
+
+
+
+#TODO: Feature task for production:
+# - name: Assemble list of VMs in oVirt that are not in curated list
+#   set_fact:
+#     missingList: "{{ missingList + [item] }}"
+#   loop: "{{ ovirtvm_list }}"
+#   when: item not in vm_targetslist
+
+
+
+
+
+  #TODO: Feature task production: Add to the body the missing list to the email and utilize an when conditional to test the email 
+  #Following VM(s) appear in oVirt but are not accounted for in backup curation:\n{{missingList | join('\n')}}
+  #when: 'len(naughtyList) or length(missingList)'
+
+
+# TODO:  Feature task for production: Consider retooling email to only send once by having a global email body appendable as below
+#- name: Append text to admin email summary
+#  set_fact:
+#    email_body: |
+#      {{ email_body }}
+#      Following VM(s) no longer exist in oVirt and should be removed from curation:\n{{naughtyList | join('\n')}}\n\n
+#      Following VM(s) appear in oVirt but are not accounted for in backup curation:\n{{missingList | join('\n')}}
+#  when: 'len(naughtyList) or len(missingList)'
+

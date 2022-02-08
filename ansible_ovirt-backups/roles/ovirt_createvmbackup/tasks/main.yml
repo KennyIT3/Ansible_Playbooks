@@ -1,0 +1,57 @@
+# ---
+- name: Creates a snapshot for target VM
+  ovirt_snapshot:
+   auth: "{{ ovirt_auth }}"
+   vm_name: "{{ item }}" 
+   description: ansible-backup-snap
+   use_memory: false
+   wait: true
+  register: snapshot
+  ignore_errors: yes
+  failed_when: 'snapshot is failed' 
+
+- name: Create date suffix for backup
+  set_fact:
+    bkp_date_suffix: "{{ '%Y-%m-%d_%H%M' | strftime(ansible_date_time.epoch)  }}"
+
+- name: Create VM clone from new snapshot
+  ovirt_vm:
+   auth: "{{ ovirt_auth }}"
+   snapshot_vm: "{{ item }}"
+   snapshot_name: ansible-backup-snap
+   name: "{{ item }}_BKP_{{bkp_date_suffix}}"
+   wait: true
+   delete_protected: false
+   timeout: 18000
+   state: present
+
+
+- name: Perpetuate clone to export domain
+  ovirt_vm:
+   auth: "{{ ovirt_auth }}"
+   name: "{{ item }}_BKP_{{bkp_date_suffix}}"
+   wait: true
+   state: exported
+   export_domain: "backup-compute-1"
+   timeout: 18000
+
+
+#TODO: Remove the clone VM from ovirt.
+- name: Remove clone vm 
+  ovirt_vm:
+    auth: "{{ ovirt_auth }}"
+    name: "{{ item }}_BKP_{{bkp_date_suffix}}"
+    wait: true
+    state: absent
+
+- name: Remove target snapshot
+  ovirt_snapshot:
+    auth: "{{ ovirt_auth }}"
+    vm_name: "{{ item }}"
+
+    description: ansible-backup-snap
+    use_memory: false
+    keep_days_old: 0
+    wait: true
+  register: removesnap
+

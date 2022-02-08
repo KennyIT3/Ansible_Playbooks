@@ -1,0 +1,32 @@
+---
+# tasks file for security_patch
+- name: Checking for Centos Security Updates
+  yum:
+      name: '*'
+      security: yes
+      state: latest
+      exclude: kernel
+  check_mode: yes
+  register: CentosSecurity_Pack
+  when: ansible_os_family == "RedHat"
+  
+
+- name: Show output of security packages that need to be updated Centos
+  debug:
+    msg: "{{ CentosSecurity_Pack }}"
+  when: ansible_os_family == "RedHat"  and CentosSecurity_Pack['changed']
+
+- name: Checking for Ubuntu Security Updates
+  apt:
+    force_apt_get: yes
+    state: latest
+    upgrade: yes
+    dpkg_options: "Dir::Etc::SourceList=/etc/apt/security.sources.list"
+  check_mode: yes
+  register: UbuntuSecurity_Pack
+  when: ansible_os_family == "Debian"
+
+- name: Show output of security packages that need to be updated 
+  debug: msg="{{ UbuntuSecurity_Pack.stdout_lines }}"
+  when: ansible_os_family == "Debian"
+   

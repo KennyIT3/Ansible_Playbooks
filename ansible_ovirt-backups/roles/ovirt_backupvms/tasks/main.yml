@@ -1,0 +1,38 @@
+---
+- name: Run sequential backups of target VMs
+  include_role:
+    name: ovirt_createvmbackup
+  loop: "{{ goodList_override }}"
+  register: backup_results
+  
+
+- name: Display output
+  debug:
+    msg: "{{  backup_results  }}"
+
+- name: Send email when Job Completed
+  when: "backup_results"
+  mail:
+   host: localhost
+   port: 25
+   to: "{{ ovirt_backup_admin_mail }}"
+   subject: Ansible-report
+   body: "Following VM Backup was completed in Ovirt: {{ goodList_override }}"
+  
+- name: End the Playbook
+  meta: end_play
+
+
+
+
+
+# TODO: Feature task for production: Filter by the the ansible user and increase the max number of events the module pulls
+# - name: "Get previous event info"
+#   ovirt_event_info:
+#     auth: "{{ ovirt_auth }}"
+#     max: 5
+#   register: previous
+
+# - name: Display output
+#   debug:
+#     msg: "{{ previous  }}"
