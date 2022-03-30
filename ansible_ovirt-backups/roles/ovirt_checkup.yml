@@ -1,0 +1,24 @@
+---
+- name: Check if backup has been completed this month if not it creates a backup of the VM 
+  ovirt_vm:
+    auth: "{{ ovirt_auth }}"
+    name: "{{ item }}_BKP_{{ previous }}*"
+    wait: true
+    timeout: 18000
+    state: present   
+  register: check_backup
+
+- name: Run weekly to make sure backups are being created 
+  debug:
+    msg: "{{ check_backup }}"
+  when: check_backup.changed 
+  
+- name: Send email when Job Completed
+  when: check_backup
+  mail:
+   host: localhost
+   port: 25
+   to: "{{ ovirt_backup_admin_mail }}"
+   subject: Ansible-report
+   body: "Following VM Backup was present in Ovirt: {{ goodList_override }}"
+  
