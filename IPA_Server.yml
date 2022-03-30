@@ -1,0 +1,13 @@
+---
+# This role is to be used for base configurations of all Haven appliances
+
+# idM address override is needed at Appliances because there is no internal DNS to serve SRV records
+- name: Add host entry for FreeIPA idM
+  lineinfile:
+    path: /etc/hosts
+    line: "{{ipaserver_ip}}  {{ipaserver_host}}"
+    regexp: '^.*ccdralidm.*'
+    state: present
+    owner: root
+    group: root
+    mode: '0644'

@@ -1,0 +1,101 @@
+---
+- name: Change stack name if necessary
+  set_fact:
+    stack_name: "{{stack_name_base}}"
+
+- name: Set log target location
+  set_fact:
+    # these are set to act as empty stubs for other roles that propagate these values
+    # use for paths
+    client_logs: ""
+    # use for strings and non-path suffixes
+    client_suffix: ""
+
+- name: Create {{stack_title}} Docker stack directories
+  file:
+    path: "{{item}}"
+    state: directory
+    owner: root
+    group: config
+    mode: '0775'
+  with_items:
+    - "{{docker_dir}}/{{stack_name}}"
+    - "{{docker_dir}}/{{stack_name}}/conf.d"
+
+- name: Ensure logdata directory is present
+  file:
+    path: "{{logdata_path}}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0775'
+
+- name: Work with /vmdata on older installations
+  block:
+  - name: Check if /vmdata exists
+    stat:
+      path: "/vmdata"
+    register: vmdata
+
+  - name: Ensure that {{logdata_path}} bind mounts to /vmdata on older installations
+    when: vmdata.stat.exists
+    mount:
+      src: "/vmdata"
+      path: "{{logdata_path}}"
+      fstype: none
+      opts: "defaults,bind"
+      state: mounted
+
+- name: Add log target directories for {{stack_name}}
+  file:
+    path: "{{item}}"
+    state: directory
+    owner: root
+    group: config
+    mode: '0775'
+  with_items:
+    - "{{logdata_log_path}}/palogs"
+    - "{{logdata_log_path}}/palogs/paarchive"
+
+- name: Add logrotate configuration for PA logs if absent
+  template:
+    src: "{{role_path}}/templates/pa.logrotate.j2"
+    dest: /etc/logrotate.d/palog
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Generate {{stack_title}} Docker stack file
+  template:
+    src: "{{role_path}}/templates/{{item.src}}"
+    dest: "{{docker_dir}}/{{stack_name}}/{{item.dest}}"
+    owner: root
+    group: config
+    mode: '0664'
+  with_items:
+    - { src: 'stack.yml.j2', dest: 'stack.yml' }
+    - { src: 'conf.d/palogs.conf.j2', dest: 'conf.d/palogs.conf' }
+    - { src: 'conf.d/panos.sysconf.conf.j2', dest: 'conf.d/panos.sysconf.conf' }
+  notify: "restart {{stack_name_base}} stack"
+
+- name: Copy {{stack_title}} configuration files for Docker
+  copy:
+    src: "{{item}}"
+    dest: "{{docker_dir}}/{{stack_name}}"
+    owner: root
+    group: config
+    mode: '0664'
+  with_items:
+    - "{{role_path}}/files/syslog-ng.conf"
+  notify: "restart {{stack_name_base}} stack"
+
+# make sure the restart handler runs if necessary
+- meta: flush_handlers
+
+- name: Deploy {{stack_title}} from compose file
+  docker_stack:
+    state: present
+    with_registry_auth: yes
+    name: "{{stack_name}}"
+    compose:
+      - "{{docker_dir}}/{{stack_name}}/stack.yml"
