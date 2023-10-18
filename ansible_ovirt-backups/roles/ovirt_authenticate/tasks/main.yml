@@ -1,0 +1,7 @@
+- name: "Log into oVirt API with backup credentials"
+  ovirt_auth:
+    url: "{{ ovirt_api_url }}"
+    username: "{{ ovirt_username }}"
+    password: "{{ ovirt_password }}"
+    insecure: yes
+    # variable auto-registers global "ovirt_auth" variable

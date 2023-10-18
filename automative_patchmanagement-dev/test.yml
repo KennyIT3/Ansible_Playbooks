@@ -1,0 +1,41 @@
+---
+- name: Setup variables for playbook
+  remote_user: root
+  gather_facts: false
+  hosts: localhost
+  remote_user: root
+  vars: 
+   good:
+     - test1.local
+     - test2.local
+     - test3.local
+     - test4.local
+     - test5.local
+     - test7.local       
+     - test8.local       
+     - test10.local       
+     - test11.local       
+     - test12.local       
+     - test13.local       
+     - test14.local       
+     - test15.local       
+
+
+  tasks:
+  - name: test
+    shell: |
+      ssh root@{{item}}  lsblk -io KNAME,TYPE,SIZE,MODEL,SERIAL
+    args:
+      executable: /bin/bash
+    delegate_to: localhost
+    loop: "{{ good }}"
+    register: test
+
+    #- name: move
+    #shell: "{{ test }}" > input.txt 
+
+  - debug:
+      msg: "{{ item.stdout_lines }}"
+    loop: "{{ test.results}}" 
+    loop_control:
+      label: "{{ item.cmd }}"

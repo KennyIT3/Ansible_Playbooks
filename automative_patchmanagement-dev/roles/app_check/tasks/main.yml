@@ -1,0 +1,61 @@
+---
+# tasks file for app_check
+#Checking Applications
+- name: ensure apache2 is running
+  service:
+    name: apache2 
+    state: started
+  tags:
+    - web
+
+- name: ensure nginx is running
+  service:
+    name: nginx 
+    state: started
+  tags:
+    - web
+
+- name: ensure mysql is running
+  service:
+    name: mysql 
+    state: started
+  tags:
+    - mysql # Parent Tag
+    # CHange the tag make it secondary tag or etc.. 
+
+- name: ensure cassandra is running
+  service:
+    name: cassandra
+    state: started
+  tags:
+    - cass  #Parent tag
+    # CHange the tag make it secondary tag or etc.. 
+
+- name: ensure docker is running
+  service: 
+    name: docker
+    state: started
+  tags:
+    - docker
+
+- name:  ensure elasticsearch is running
+  service:
+    name: elasticsearch
+    state: started
+  tags:
+    - beyond
+
+- name: ensure zabbix is running
+  service:
+    name: zabbix 
+    state: started
+  tags:
+    - Beyond
+
+  
+
+    
+ 
+      
+
+

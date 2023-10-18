@@ -1,3 +1,2 @@
 # Ansible_Playbooks
-
-Example of playbooks I have created 
+This Repo is for Ansible backup process of Ovirt as well patch process.

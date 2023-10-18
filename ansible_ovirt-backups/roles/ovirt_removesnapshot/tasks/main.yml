@@ -1,0 +1,23 @@
+# tasks file for ovirt_removesnapshot
+#TODO: Feature role for production: Make playbook to check export-domain for any VMs longer than month timeframe 
+---
+#TODO: utilize the shell module to list dates and then find a way to remove ovirt_createvmbackup based on the dates
+- name: List snaphosts
+  ovirt_snapshot_info:
+    auth: "{{ ovirt_auth }}"
+    vm: "{{ host }}"
+
+#TODO: Create a seperate playbook that checks to see who created a snapshot and sends loop email for ovirt_createvmbackup that are older than 7 days
+#TODO: Feature for playbook to remove snaps month or more older
+- name: Remove snaphosts older then week
+  ovirt_snapshots:
+    auth: "{{ ovirt_auth }}"
+    state: absent
+    vm_name: "{{ host }}"
+    use_memory: false
+    wait: true
+    snapshot_id: "{{ item.id }}"
+  with_items: "{{ ovirt_snapshots }}"
+  when: "{{( ansible_date_time.date|to_datetime('%Y-%m-%d') - item.date[:-6]|to_datetime('%Y-%m-%d %H:%M:%S.%f')).days > 7 }}"
+
+

@@ -1,0 +1,85 @@
+#baseurl=http://test.com/
+#enabled=1
+#gpgcheck=0
+
+
+[local-base]
+name=CentOS Base
+baseurl=http://test.com/base/
+gpgcheck=0
+enabled=1
+
+[local-centosplus]
+name=CentOS CentOSPlus
+baseurl=http://test.com/centosplus/
+gpgcheck=0
+enabled=1
+
+[local-extras]
+name=CentOS Extras
+baseurl=http://test.com/extras/
+gpgcheck=0
+enabled=1
+
+[local-updates]
+name=CentOS Updates
+baseurl=http://test.com/updates/
+gpgcheck=0
+enabled=1
+
+[local-beyondpackages]
+name=CentOS Beyond Packages
+baseurl=http://test.com/beyondpack/
+gpgcheck=0
+enabled=1
+
+
+[zabbix]
+name=CentOS Beyond Packages
+baseurl=http://test.com/zabbix/
+gpgcheck=0
+enabled=1
+
+[cassandra]
+name=CentOS Beyond Packages
+baseurl=http://test.com/cassandra/
+gpgcheck=0
+enabled=1
+
+[docker]
+name=CentOS Beyond Packages
+baseurl=http://test.com/docker/
+gpgcheck=0
+enabled=1
+
+[elastic]
+name=CentOS Beyond Packages
+baseurl=http://test.com/elastic/
+gpgcheck=0
+enabled=1
+
+[gitlab]
+name=CentOS Beyond Packages
+baseurl=http://test.com/gitlab/
+gpgcheck=0
+enabled=1
+
+[mysql]
+name=CentOS Beyond Packages
+baseurl=http://test.com/mysql/
+gpgcheck=0
+enabled=1
+
+
+[tacacs]
+name=CentOS Beyond Packages
+baseurl=http://test.com/tacacs/
+gpgcheck=0
+enabled=1
+
+
+[thehive]
+name=CentOS Beyond Packages
+baseurl=http://test.com/thehive/
+gpgcheck=0
+enabled=1

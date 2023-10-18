@@ -1,0 +1,37 @@
+---
+- name: Print the package facts
+  hosts: #localhost
+     - Test1
+     #- Test3
+     - Test4
+  vars:
+   good:
+     - Test1
+     - Test3
+     - Test4
+  tasks:  
+  - name: "Gather packages"
+    package_facts:
+        manager: auto
+
+  - name: "test"      
+    set_fact:    
+       pkg_ver: "{{ ansible_hostname }}:  {{ item }} Version: {{ ansible_facts.packages[item][0]['version'] }} Release: {{ ansible_facts.packages[item][0]['release'] }}"
+    loop: "{{ ansible_facts.packages | list }}"
+    register: test2
+
+    #- name: "Get all soln packages"
+    # lineinfile:
+    #  path: /tmp/foofile
+    #  mode: 0644
+    #  line: "{{ ansible_hostname }}:  {{ item }} Version: {{ ansible_facts.packages[item][0]['version'] }} Release: {{ ansible_facts.packages[item][0]['release'] }}"
+    #  create: yes
+    #loop: "{{ ansible_facts.packages|list }}"
+    #delegate_to: localhost
+    #register: test
+ 
+  - name: Print the package facts
+    delegate_to: localhost
+    copy:
+      content: "{{pkg_ver | to_nice_json }}"
+      dest: "/ansible/packages/{{inventory_hostname}}-{{ansible_date_time.date}}.json"

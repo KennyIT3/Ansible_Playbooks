@@ -1,0 +1,57 @@
+### This is the main playbook to run all the roles and creds
+---
+- name: Main Playbook
+  hosts: 
+     - Test1.local
+     - Test4.local
+     - Test5.rocal
+     - Test6.local
+
+# Set to run the the playbook on hosts in the inventory file, grouped has DB, Web,Beyond
+# Hosts
+  # - DB
+  # - Web
+  # - Beyond
+ 
+  gather_facts: yes
+  become: yes
+  
+  vars:
+    # ansible_python_interpreter: "/usr/bin/python3" # Not need for this playbook 
+    ovirt_api_url: https://test.net/ovirt-engine/api
+    ovirt_username: test
+    
+   # TODO: See how to make the encryption work
+    ovirt_password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          35343864653634373366613336636664
+
+    # VMs to test for updates  
+    Centos_VMS:
+      - Web1.local 
+      - Web2.local
+
+    Ubuntu_VMS:  
+      - DB.local
+      - DB2.local
+
+  roles: # Roles below are set in the order for each role to be run
+  # Create a role to do package curation 
+    - global_repo
+  # Create a role to check for updates
+    - update_check
+    # - test_role
+  # Create a role to do security patches
+    - security_patch
+  # Create a role to patch the VMs 
+    - package_manage
+  # Create a role to restart the VMs after an update has been completed  
+    - app_check 
+
+    
+  # Roles for Ovirt Actions 
+    # - ovirt_authenticate # authenticate with oVirt for API access
+    # - ovirt_snapshot # Create a snapshot before update 
+    
+   
+    

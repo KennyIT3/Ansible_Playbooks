@@ -1,0 +1,51 @@
+---
+- name: Print the package facts
+  hosts: #localhost
+     - Test1
+     - Test4
+
+  vars:
+   good:
+     - Test1
+     - Test4
+
+  tasks:   
+  - name: Print the package facts
+    package_facts:
+        manager: "auto"
+        #name:
+        #version:
+
+        #- name: Get only list of name of installed packages
+    #  set_fact:
+    #   installed_packages: "{{ ansible_facts.packages.keys()|json_query('[].name') }}" 
+    # register: package     
+
+  - name: Get only list of name and version
+    set_fact:
+       #pkg_ver: "{{ ansible_facts.packages[item][0].version }}"
+       pkg_ver: "{{ ansible_hostname }} {{ item }} Version: {{ ansible_facts.packages[item]['version'] }}"
+       #pkg_ver: "{{ ansible_facts.packages.keys().version }}"
+       #Name: {{ ansible_facts.packages[item]['name'] }}
+      #loop: "{{ lookup('dict', packagesToValidate) }}"
+    loop: "{{ ansible_facts.packages | list }}"
+    register: test
+      
+   #  "{{ ansible_facts.packages['zabbix-agent']|
+   #              json_query('[].version') }}"
+    
+  #- name: Debug
+  #  debug:
+  #    msg: "{{ item.key }} {{ item.value|json_query('[].version') }}"
+  #  loop: "{{ ansible_facts.packages|dict2items }}"
+  #  loop_control:
+  #    label: "{{ item.key }}"
+  #  register: test
+
+    
+  - name: Write report to outfiles
+    delegate_to: localhost
+    copy:
+      content: "{{ ansible_facts.packages | to_nice_json }}"
+      dest: "/ansible/packages/{{inventory_hostname}}-{{ansible_date_time.date}}.json"
+

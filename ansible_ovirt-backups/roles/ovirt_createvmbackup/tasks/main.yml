@@ -1,0 +1,72 @@
+# ---
+- name: Creates a snapshot for target VM
+  ovirt_snapshot:
+   auth: "{{ ovirt_auth }}"
+   vm_name: "{{ item }}" 
+   description: ansible-backup-snap
+   use_memory: false
+   wait: true
+  register: snapshot
+  ignore_errors: yes
+  failed_when: 'snapshot is failed' 
+
+- name: Create date suffix for backup
+  set_fact:
+    bkp_date_suffix: "{{ '%Y-%m-%d_%H%M' | strftime(ansible_date_time.epoch)  }}"
+
+- name: Create VM clone from new snapshot 
+  ovirt_vm:
+   auth: "{{ ovirt_auth }}"
+   snapshot_vm: "{{ item }}"
+   snapshot_name: ansible-backup-snap
+   name: "{{ item }}_BKP_{{bkp_date_suffix}}"
+   wait: true
+   delete_protected: false
+   timeout: 18000
+   state: present
+
+- name: List VMs disks 
+  ovirt_vm_facts:
+    auth: "{{ ovirt_auth }}"
+    fetch_nested: true
+    pattern: name= "{{ item }}_BKP_*"
+    nested_attributes:
+      - disk_attachments
+#  register: test
+  
+# - name: Test
+#   debug:
+#     msg: "{{ test }}"
+
+- name: Pull the disk ID from VMs
+  set_fact:
+    disk_id: "{{ item.disk_attachments[0].id }}"
+  loop: "{{ ovirt_vms }}"
+  loop_control:
+    label: "{{ item.disk_attachments[0].id }}"
+  register: disk_vms
+
+- name: Print Disk_IDs
+  debug:
+    msg: "{{ disk_id }}"
+
+- name: Attach disk to storage
+  ovirt_disk:
+    auth: "{{ ovirt_auth }}"
+    storage_domain: backup-compute-1  # Have backup domain for each datacenter 
+    vm_name: "{{ item }}_BKP_{{bkp_date_suffix}}"
+    wait: true
+    timeout: 18000
+    name: "{{ disk_id }}"
+    id: "{{ disk_id  }}" 
+    state: attached
+
+- name: Remove target snapshot
+  ovirt_snapshot:
+    auth: "{{ ovirt_auth }}"
+    vm_name: "{{ item }}"
+    description: ansible-backup-snap
+    snapshot_id: "{{ snapshot.id }}"
+    timeout: 18000
+    wait: true
+    state: absent 
